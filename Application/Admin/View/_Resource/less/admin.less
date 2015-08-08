@@ -1,8 +1,13 @@
+// 3rd (need variables) ===================================================
+@import "../../../../../Public/libs/font_awesome/less/font-awesome.less";
+//
+//
+//
 // Bootstrap 3 ===================================================
 //
 //
 // Core variables and mixins
-@import "../../../../../Public/libs/bootstrap/less/variables.less";
+@import "../../_Resource/less/variables.less";
 @import "../../../../../Public/libs/bootstrap/less/mixins.less";
 //
 // Reset and dependencies
@@ -54,18 +59,16 @@
 //
 //
 //
-// 3rd ===================================================
-@import "../../../../../Public/libs/font_awesome/less/font-awesome.less";
-@fa-font-path: "../../../../../Public/libs/font_awesome/fonts";
+// 3rd (not need variables) ===================================================
 @import (less) "../../../../../Public/libs/jquery_huploadify/Huploadify.css";
-@import (less) "../../../../../Public/libs/jquery_tokeninput/styles/token-input.css";
-@import (less) "../../../../../Public/libs/jquery_tokeninput/styles/token-input-mac.css";
+// @import (less) "../../../../../Public/libs/jquery_tokeninput/styles/token-input.css";
+@import "../../../../../Public/libs/jquery_tokeninput/styles/token-input-bootstrap.less";
 @import "../../../../../Public/libs/bootstrap_daterangepicker/daterangepicker.css";
 //
 //
 //
 // ADMIN ===================================================
-@import "../../_Layout/@_main.less";
-@import "../../Index/@_index.less";
-@import "../../Public/@_login.less";
-@import "../../../../Common/Builder/@_builder.less";
+@import "../../_Layout/_main.less";
+@import "../../Index/_index.less";
+@import "../../Public/_login.less";
+@import "../../../../Common/Builder/_builder.less";

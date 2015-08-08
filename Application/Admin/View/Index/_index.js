@@ -85,7 +85,6 @@ $(function() {
     }).done(function(data) {
         if (data.status == 1) {
             $('.update').html(data.info);
-            console.log(data);
         } else {
             $.bootstrapGrowl(data.info, {
                 type: 'danger',

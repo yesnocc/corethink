@@ -73,10 +73,10 @@ var admin_script_files = [
     "Public/libs/jquery_huploadify/jquery.HuploadifyMod.js",
 
 
-    "Application/Admin/View/_Layout/$_main.js",
-    "Application/Admin/View/Index/$_index.js",
-    "Application/Admin/View/Public/$_login.js",
-    "Application/Common/Builder/$_builder.js",
+    "Application/Admin/View/_Layout/_main.js",
+    "Application/Admin/View/Index/_index.js",
+    "Application/Admin/View/Public/_login.js",
+    "Application/Common/Builder/_builder.js",
 ];
 
 gulp.task('admin_script_module', function() {
@@ -121,17 +121,18 @@ gulp.task('watching', function() {
     gulp.watch(admin_script_files, ['admin_script_module']);
     gulp.watch([
         ADMIN.ROOT + '/**/*.less',
-        'Application/Common/**/*.less'
+        'Application/Common/**/*.less',
+        'Public/libs/**/*.less'
     ], ['admin_style_module']);
 
     // LIVERELOAD
     livereload.listen();
-
     gulp.watch([
         'index.php',
         ADMIN.ROOT + '/**/*.php',
         ADMIN.ROOT + '/**/*.less',
         'Application/Common/**/*.less',
+        'Public/libs/**/*.less',
     ], function(event) {
         livereload.changed(event.path);
     });
