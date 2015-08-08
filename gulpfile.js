@@ -82,9 +82,9 @@ var admin_script_files = [
 gulp.task('admin_script_module', function() {
     gulp
         .src(admin_script_files)
-        .pipe(concat('admin_source.js'))
+        .pipe(concat('admin.js'))
         .pipe(gulp.dest('Public/js/'))
-        .pipe(uglify()).pipe(rename('admin.js'))
+        .pipe(uglify()).pipe(rename('admin.min.js'))
         .pipe(header(gulp_comment_banner, {
             date: gulp_date_now
         }))

@@ -80,7 +80,7 @@ return array(
         'file'       => array('文件', 'varchar(32) NOT NULL'),
         'files'      => array('多文件', 'varchar(32) NOT NULL'),
         'kindeditor' => array('编辑器 kindeditor', 'text'),
-        'simditor' => array('编辑器 simditor', 'text'),
+        'simditor'   => array('编辑器 simditor', 'text'),
         'tags'       => array('标签', 'varchar(128) NOT NULL'),
         'board  '    => array('拖动排序', 'varchar(256) NOT NULL'),
     ),
