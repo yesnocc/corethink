@@ -2,7 +2,7 @@
 // @author   Jason 封仁杰 <solidzoro@live.com>
 // @lastdate 2015-08-05 15:51:03
 //
-// npm install gulp autoprefixer strftime gulp-less gulp-autoprefixer gulp-concat gulp-jade gulp-jshint gulp-uglify gulp-jshint gulp-coffee gulp-header gulp-rename gulp-sourcemaps gulp-minify-css gulp-livereload gulp-watch --save-dev
+// npm install gulp autoprefixer strftime gulp-less gulp-autoprefixer gulp-concat gulp-jade gulp-jshint gulp-uglify gulp-jshint gulp-coffee gulp-header gulp-rename gulp-sourcemaps gulp-minify-css gulp-imports gulp-livereload gulp-watch --save-dev
 
 
 
@@ -12,16 +12,16 @@
 // --------------------------------------------
 var gulp = require('gulp');
 var less = require('gulp-less');
-// var minifyCSS = require('gulp-minify-css');
-// var sourcemaps = require('gulp-sourcemaps');
+var minifyCss = require('gulp-minify-css');
+var sourcemaps = require('gulp-sourcemaps');
 var prefix = require('gulp-autoprefixer');
-var concat = require('gulp-concat');
+// var concat = require('gulp-concat');
 var uglify = require('gulp-uglify');
 var strftime = require('strftime');
 var header = require('gulp-header');
 var rename = require('gulp-rename');
 var livereload = require('gulp-livereload');
-// var jsincluder = require('gulp-jsincluder');
+var imports = require('gulp-imports');
 
 
 
@@ -30,7 +30,7 @@ var livereload = require('gulp-livereload');
 // mod module
 // --------------------------------------------
 var gulp_date_now = strftime('%F %T'); // mod current time
-var gulp_comment_banner = '/*! * <%= date %> */\n\n'; // mod ASCII banner
+var gulp_comment_banner = '/*! ---- * <%= date %> ---- */\n\n'; // mod ASCII banner
 
 
 
@@ -45,48 +45,23 @@ var ADMIN = {
 
 // SCRIPT ADMIN
 var admin_script_files = [
-    "Public/libs/respond/dest/respond.src.js",
-    "Public/libs/html5shiv/scr/html5shiv.js",
-    "Public/libs/moment/min/moment.min.js",
-
-    "Public/libs/bootstrap/js/transition.js",
-    "Public/libs/bootstrap/js/alert.js",
-    "Public/libs/bootstrap/js/button.js",
-    "Public/libs/bootstrap/js/carousel.js",
-    "Public/libs/bootstrap/js/collapse.js",
-    "Public/libs/bootstrap/js/dropdown.js",
-    "Public/libs/bootstrap/js/modal.js",
-    "Public/libs/bootstrap/js/tooltip.js",
-    "Public/libs/bootstrap/js/popover.js",
-    "Public/libs/bootstrap/js/scrollspy.js",
-    "Public/libs/bootstrap/js/tab.js",
-    "Public/libs/bootstrap/js/affix.js",
-
-    "Public/libs/bootstrap_daterangepicker/daterangepicker.js",
-    "Public/libs/bootstrap_growl/jquery.bootstrap-growl.js",
-
-    "Public/libs/jquery_cookie/jquery.cookie.js",
-    "Public/libs/jquery_easing/jquery.easing.js",
-    "Public/libs/jquery_dragsort/jquery.dragsort.js",
-    "Public/libs/jquery_starrating/egstar-rating.js",
-    "Public/libs/jquery_tokeninput/src/jquery.tokeninput.js",
-    "Public/libs/jquery_huploadify/jquery.HuploadifyMod.js",
-
-
-    "Application/Admin/View/_Layout/_main.js",
-    "Application/Admin/View/Index/_index.js",
-    "Application/Admin/View/Public/_login.js",
-    "Application/Common/Builder/_builder.js",
+    ADMIN.VIEW + "/_Resource/js/admin.js",
 ];
 
 gulp.task('admin_script_module', function() {
     gulp
         .src(admin_script_files)
-        .pipe(concat('admin.js'))
-        .pipe(gulp.dest('Public/js/'))
-        .pipe(uglify()).pipe(rename('admin.min.js'))
+        .pipe(imports())
         .pipe(header(gulp_comment_banner, {
             date: gulp_date_now
+        }))
+        .pipe(gulp.dest('Public/js/'))
+        .pipe(uglify())
+        .pipe(header(gulp_comment_banner, {
+            date: gulp_date_now
+        }))
+        .pipe(rename({
+            suffix: '.min'
         }))
         .pipe(gulp.dest('Public/js/'));
 });
@@ -100,10 +75,17 @@ gulp.task('admin_style_module', function() {
     gulp
         .src(admin_style_files)
         .pipe(less())
-        .pipe(prefix())
+        .pipe(prefix('last 2 version', 'ie 8', 'ie 9'))
+        .pipe(sourcemaps.init())
         .pipe(rename('admin.css'))
         .pipe(header(gulp_comment_banner, {
             date: gulp_date_now
+        }))
+        .pipe(sourcemaps.write())
+        .pipe(gulp.dest('Public/css/'))
+        .pipe(minifyCss())
+        .pipe(rename({
+            suffix: '.min'
         }))
         .pipe(gulp.dest('Public/css/'))
         .pipe(livereload());
