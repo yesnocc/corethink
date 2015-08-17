@@ -33,7 +33,7 @@ EOF;
      */
     public function index($doc_type){
         //搜索
-        $keyword = (string)I('keyword');
+        $keyword = I('keyword', '', 'string');
         $condition = array('like','%'.$keyword.'%');
         $map['id|name|title'] = array($condition, $condition, $condition,'_multi'=>true);
 
@@ -42,7 +42,9 @@ EOF;
         }
         $map['status'] = array('egt', 0);
         $document_attribute_list = D('DocumentAttribute')->page(!empty($_GET["p"])?$_GET["p"]:1, C('ADMIN_PAGE_ROWS'))
-                                                         ->order('id desc')->where($map)->select();
+                                                         ->order('id desc')
+                                                         ->where($map)
+                                                         ->select();
         $page = new \Common\Util\Page(D('DocumentAttribute')->where($map)->count(), C('ADMIN_PAGE_ROWS'));
 
         $attr['title'] = '新 增';
@@ -52,6 +54,11 @@ EOF;
         //使用Builder快速建立列表页面。
         $builder = new \Common\Builder\ListBuilder();
         $builder->setMetaTitle('字段管理') //设置页面标题
+                ->addTopButton('self', array( //添加返回按钮
+                    'title' => '<i class="fa fa-reply"></i> 返回模型列表',
+                    'class' => 'btn btn-warning',
+                    'onclick' => 'javascript:history.back(-1);return false;')
+                )
                 ->addTopButton('self', $attr) //添加新增按钮
                 ->addTopButton('resume') //添加启用按钮
                 ->addTopButton('forbid') //添加禁用按钮
@@ -84,7 +91,17 @@ EOF;
                 if($id){
                     $result = $document_attribute_object->addField($data); //新增表字段
                     if($result){
-                        $this->success('新增字段成功', U('index', array('doc_type' => I('doc_type'))));
+                        //自动将新添加的字段ID添加到模型字段排序的[基础]中
+                        //此代码执行后用户不再需要手动去编辑模型然后拖动排序字段
+                        $document_type_object = D('DocumentType');
+                        $field_sort = json_decode($document_type_object->getFieldById($doc_type, 'field_sort'), true);
+                        $field_sort[1][] = (string)$id;
+                        $status = $document_type_object->where(array('id' => $doc_type))->setField('field_sort', json_encode($field_sort));
+                        if($status){
+                            $this->success('新增字段成功', U('index', array('doc_type' => $doc_type)));
+                        }else{
+                            $this->error('新增字段成功，字段排序失败！'.$document_type_object->getError(), U('index', array('doc_type' => $doc_type)));
+                        }
                     }else{
                         $document_attribute_object->delete($id); //删除新增数据
                         $this->error('新建字段出错！');
@@ -111,7 +128,7 @@ EOF;
             $builder = new \Common\Builder\FormBuilder();
             $builder->setMetaTitle('新增字段') //设置页面标题
                     ->setPostUrl(U('add')) //设置表单提交地址
-                    ->addFormItem('doc_type', 'select', '文档类型', '文档类型', $this->selectListAsTree('DocumentType'))
+                    ->addFormItem('doc_type', 'select', '文档类型', '文档类型', select_list_as_tree('DocumentType'))
                     ->addFormItem('name', 'text', '字段名称', '字段名称，如“title”')
                     ->addFormItem('title', 'text', '字段标题', '字段标题，如“标题”')
                     ->addFormItem('type', 'select', '字段类型', '字段类型', $new_form_item_type)
@@ -162,7 +179,7 @@ EOF;
             $builder->setMetaTitle('编辑字段') //设置页面标题
                     ->setPostUrl(U('edit')) //设置表单提交地址
                     ->addFormItem('id', 'hidden', 'ID', 'ID')
-                    ->addFormItem('doc_type', 'select', '文档类型', '文档类型', $this->selectListAsTree('DocumentType'))
+                    ->addFormItem('doc_type', 'select', '文档类型', '文档类型', select_list_as_tree('DocumentType'))
                     ->addFormItem('name', 'text', '字段名称', '字段名称，如“title”')
                     ->addFormItem('title', 'text', '字段标题', '字段标题，如“标题”')
                     ->addFormItem('type', 'select', '字段类型', '字段类型', $new_form_item_type)

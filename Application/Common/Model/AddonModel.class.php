@@ -10,7 +10,8 @@ namespace Common\Model;
 use Think\Model;
 /**
  * 插件模型
-* @author jry <598821125@qq.com>
+ * 该类参考了OneThink的部分实现
+ * @author jry <598821125@qq.com>
  */
 class AddonModel extends Model{
     /**
@@ -34,6 +35,16 @@ class AddonModel extends Model{
         array('sort', '0', self::MODEL_INSERT),
         array('status', '1', self::MODEL_INSERT),
     );
+
+    /**
+     * 插件类型
+     * @author jry <598821125@qq.com>
+     */
+    public function addon_type($id){
+        $list[0] = '系统插件';
+        $list[1] = '微＋插件';
+        return $id ? $list[$id] : $list;
+    }
 
     /**
      * 获取插件列表

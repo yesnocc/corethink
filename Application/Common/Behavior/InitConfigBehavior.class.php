@@ -24,25 +24,13 @@ class InitConfigBehavior extends Behavior{
         //安装模式下直接返回
         if(defined('BIND_MODULE') && BIND_MODULE === 'Install') return;
 
-        //系统主页地址配置
-        $config['HOME_PAGE'] = 'http://'.$_SERVER['HTTP_HOST'].__ROOT__;
-
-        //获取ThinkPHP控制器分级时控制器名称
-        $controller_name = explode('/', CONTROLLER_NAME);
-
-        /**
-         * 前缀设置避免冲突
-         * 用于将各个模块的缓存、Cookie等数据分开防止冲突
-         */
-         $config['DATA_CACHE_PREFIX'] = ENV_PRE.MODULE_NAME.'_'; //数据缓存前缀
-        if(MODULE_NAME === 'Admin' || $controller_name[0] === 'Admin'){
-            $config['SESSION_PREFIX']    = ENV_PRE.'Admin_'; //Session前缀
-            $config['COOKIE_PREFIX']     = ENV_PRE.'Admin_'; //Cookie前缀
-        }elseif(MODULE_NAME === 'Home' || $controller_name[0] === 'Home'){
-            $config['SESSION_PREFIX']    = ENV_PRE.'Home_'; //Session前缀
-            $config['COOKIE_PREFIX']     = ENV_PRE.'Home_'; //Cookie前缀
+        //数据缓存前缀
+        $controller_name = explode('/', CONTROLLER_NAME); //获取ThinkPHP控制器分级时控制器名称
+        if(sizeof($controller_name) === 2){
+            C('DATA_CACHE_PREFIX', ENV_PRE.MODULE_NAME.'_'.$controller_name[0].'_');
+        }else{
+            C('DATA_CACHE_PREFIX', ENV_PRE.MODULE_NAME.'_');
         }
-        C($config); //添加配置
 
         //读取数据库中的配置
         $system_config = S('DB_CONFIG_DATA');
@@ -50,33 +38,64 @@ class InitConfigBehavior extends Behavior{
             //获取所有系统配置
             $system_config = D('SystemConfig')->lists();
 
+            //不直接在config里配置这些参数而要在这里配置是为了支持功能模块的相关架构
             if(MODULE_NAME === 'Admin' || $controller_name[0] === 'Admin'){
-                //模板相关配置
-                $system_config['TMPL_PARSE_STRING']['__PUBLIC__'] = __ROOT__.'/Public';
-                $system_config['TMPL_PARSE_STRING']['__IMG__'] = __ROOT__.'/Application/Admin/View/_Resource/img';
-                $system_config['TMPL_PARSE_STRING']['__CSS__'] = __ROOT__.'/Application/Admin/View/_Resource/css';
-                $system_config['TMPL_PARSE_STRING']['__JS__']  = __ROOT__.'/Application/Admin/View/_Resource/js';
-            }elseif(MODULE_NAME === 'Home' || $controller_name[0] === 'Home'){
-                /**
-                 * 获取系统所有主题名称并配置THEME_LIST
-                 * 根据ThinkPHP规则如果开启自动侦测模板主题功能(TMPL_DETECT_THEME)
-                 * 则必须配置THEME_LIST，否则TP会调用默认主题(DEFAULT_THEME)导致主题功能失效
-                 */
-                $system_theme_list = D('SystemTheme')->getfield('name', true);
-                $system_config['THEME_LIST'] = implode(',', $system_theme_list);
+                //Admin后台与模块后台标记
+                $system_config['MODULE_MARK'] = 'Admin';
 
-                //从系统主题数据表获取当前主题的名称
+                //SESSION与COOKIE与前缀设置避免冲突
+                $system_config['SESSION_PREFIX'] = ENV_PRE.'Admin_'; //Session前缀
+                $system_config['COOKIE_PREFIX']  = ENV_PRE.'Admin_'; //Cookie前缀
+
+                //当前模块模版参数配置
+                $system_config['TMPL_PARSE_STRING'] = C('TMPL_PARSE_STRING'); //先取出配置文件中定义的否则会被覆盖
+                $system_config['TMPL_PARSE_STRING']['__IMG__']  = __ROOT__.'/'.APP_PATH.MODULE_NAME.'/View/_Resource/img';
+                $system_config['TMPL_PARSE_STRING']['__CSS__']  = __ROOT__.'/'.APP_PATH.MODULE_NAME.'/View/_Resource/css';
+                $system_config['TMPL_PARSE_STRING']['__JS__']   = __ROOT__.'/'.APP_PATH.MODULE_NAME.'/View/_Resource/js';
+                $system_config['TMPL_PARSE_STRING']['__LIBS__'] = __ROOT__.'/'.APP_PATH.MODULE_NAME.'/View/_Resource/libs';
+
+                //错误页面模板
+                $system_config['TMPL_ACTION_ERROR']   = APP_PATH.'Admin/View/_Think/error.html'; //错误跳转对应的模板文件
+                $system_config['TMPL_ACTION_SUCCESS'] = APP_PATH.'Admin/View/_Think/success.html'; //成功跳转对应的模板文件
+                $system_config['TMPL_EXCEPTION_FILE'] = APP_PATH.'Admin/View/_Think/exception.html'; //异常页面的模板文件
+            }elseif(MODULE_NAME === 'Home' || $controller_name[0] === 'Home'){
+                //Home前台与模块前台标记
+                $system_config['MODULE_MARK'] = 'Home';
+
+                //SESSION与COOKIE与前缀设置避免冲突
+                $system_config['SESSION_PREFIX'] = ENV_PRE.'Home_'; //Session前缀
+                $system_config['COOKIE_PREFIX']  = ENV_PRE.'Home_'; //Cookie前缀
+
+                //获取当前主题的名称
                 $current_theme = D('SystemTheme')->where(array('current' => 1))->order('id asc')->getField('name');
-                if(MODULE_NAME === 'Home'){
-                    $system_config['DEFAULT_THEME'] = $current_theme; //默认主题设为当前主题
-                    cookie('think_template', $current_theme); //默认主题设为当前主题
+                $current_theme_path = APP_PATH.MODULE_NAME.'/View/'.$current_theme; //当前主题文件夹路径
+                if(!is_dir($current_theme_path)){
+                    $current_theme = 'default';
                 }
 
-                //模板相关配置
-                $system_config['TMPL_PARSE_STRING']['__PUBLIC__'] = __ROOT__.'/Public';
-                $system_config['TMPL_PARSE_STRING']['__IMG__'] = __ROOT__.'/Application/Home/View/'.$current_theme.'/_Resource/img';
-                $system_config['TMPL_PARSE_STRING']['__CSS__'] = __ROOT__.'/Application/Home/View/'.$current_theme.'/_Resource/css';
-                $system_config['TMPL_PARSE_STRING']['__JS__']  = __ROOT__.'/Application/Home/View/'.$current_theme.'/_Resource/js';
+                //公共模版参数配置
+                $system_config['TMPL_PARSE_STRING'] = C('TMPL_PARSE_STRING'); //先取出配置文件中定义的否则会被覆盖
+                $system_config['TMPL_PARSE_STRING']['__HOME_IMG__']  = __ROOT__.'/'.APP_PATH.'Home/View/'.$current_theme.'/_Resource/img';
+                $system_config['TMPL_PARSE_STRING']['__HOME_CSS__']  = __ROOT__.'/'.APP_PATH.'Home/View/'.$current_theme.'/_Resource/css';
+                $system_config['TMPL_PARSE_STRING']['__HOME_JS__']   = __ROOT__.'/'.APP_PATH.'Home/View/'.$current_theme.'/_Resource/js';
+                $system_config['TMPL_PARSE_STRING']['__HOME_LIBS__'] = __ROOT__.'/'.APP_PATH.'Home/View/'.$current_theme.'/_Resource/libs';
+
+                //错误页面模板
+                $system_config['TMPL_ACTION_ERROR']   = APP_PATH.'Home/View/'.$current_theme.'/_Think/error.html'; //默认错误跳转对应的模板文件
+                $system_config['TMPL_ACTION_SUCCESS'] = APP_PATH.'Home/View/'.$current_theme.'/_Think/success.html'; //默认成功跳转对应的模板文件
+                $system_config['TMPL_EXCEPTION_FILE'] = APP_PATH.'Home/View/'.$current_theme.'/_Think/exception.html'; //异常页面的模板文件
+
+                //模块功能主题路径特殊处理(需要加上控制器分级的名称)
+                if($controller_name[0] === 'Home'){
+                    $current_theme = 'Home/'.$current_theme;
+                }
+                $system_config['DEFAULT_THEME'] = $current_theme; //默认主题设为当前主题
+
+                //当前模块模版参数配置
+                $system_config['TMPL_PARSE_STRING']['__IMG__']  = __ROOT__.'/'.APP_PATH.MODULE_NAME.'/View/'.$current_theme.'/_Resource/img';
+                $system_config['TMPL_PARSE_STRING']['__CSS__']  = __ROOT__.'/'.APP_PATH.MODULE_NAME.'/View/'.$current_theme.'/_Resource/css';
+                $system_config['TMPL_PARSE_STRING']['__JS__']   = __ROOT__.'/'.APP_PATH.MODULE_NAME.'/View/'.$current_theme.'/_Resource/js';
+                $system_config['TMPL_PARSE_STRING']['__LIBS__'] = __ROOT__.'/'.APP_PATH.MODULE_NAME.'/View/'.$current_theme.'/_Resource/libs';
             }
 
             S('DB_CONFIG_DATA', $system_config, 3600); //缓存配置

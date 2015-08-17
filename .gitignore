@@ -1,6 +1,8 @@
 .idea
+*.log
 /Runtime/
-/Uploads/
+/Uploads/*
 /node_modules/
 /Public/css/
 /Public/js/
+!*.md

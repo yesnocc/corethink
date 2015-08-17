@@ -11,14 +11,17 @@
  * CoreThink全局配置文件
  */
 const THINK_ADDON_PATH = './Addons/';
-return array(
+$_config = array (
     /**
      * 产品配置
      * 系统升级需要此配置
-     * 免费版不允许更改，授权版可更改产品名称及公司名称
+     * 根据CoreThink用户协议：
+     * 免费版您可以免费用于项目开发
+     * 但不允许更改本产品后台的版权信息，请您尊重我们的劳动成果及知识产权，违者追究法律责任。
+     * 商业授权版可更改产品名称及公司名称，授权联系：admin@corethink.cn
      */
     'PRODUCT_NAME'    => 'CoreThink',                  //产品名称
-    'CURRENT_VERSION' => '1.0.1',                      //当前版本
+    'CURRENT_VERSION' => '1.0.2',                      //当前版本
     'WEBSITE_DOMAIN'  => 'http://www.corethink.cn',    //官方网址
     'UPDATE_URL'      => '/appstore/home/core/update', //官方更新网址
     'COMPANY_NAME'    => '南京科斯克网络科技有限公司',   //公司名称
@@ -31,23 +34,14 @@ return array(
     //公司简介
     'COMPANY_INFO'    => '南京科斯克网络科技有限公司(CoreThink)是一家新兴的互联网+项目技术解决方案提供商。我们用敏锐的视角洞察IT市场的每一次变革,我们顶着时代变迁的浪潮站在了前沿,以开拓互联网行业新渠道为己任。',
 
-    //数据库配置
-    'DB_TYPE'   => $_SERVER[ENV_PRE.'DB_TYPE'] ? : 'mysql', // 数据库类型
-    'DB_HOST'   => $_SERVER[ENV_PRE.'DB_HOST'] ? : '127.0.0.1', // 服务器地址
-    'DB_NAME'   => $_SERVER[ENV_PRE.'DB_NAME'] ? : 'corethink', // 数据库名
-    'DB_USER'   => $_SERVER[ENV_PRE.'DB_USER'] ? : 'root', // 用户名
-    'DB_PWD'    => $_SERVER[ENV_PRE.'DB_PWD']  ? : '', // 密码
-    'DB_PORT'   => $_SERVER[ENV_PRE.'DB_PORT'] ? : '3306', // 端口
-    'DB_PREFIX' => $_SERVER[ENV_PRE.'DB_PREFIX'] ? : 'ct_', // 数据库表前缀
-
-    //系统加密字符串
-    'AUTH_KEY'  => '_XRORJs!qajdwqRCEnb`yLd=UK{g@wG"?Ufa(zWFoQU+=Bf<YSDnAY/m.C%gPgnV',
+    //系统主页地址配置
+    'HOME_PAGE'       => 'http://'.$_SERVER['HTTP_HOST'].__ROOT__,
 
     //URL模式
     'URL_MODEL' => '3',
 
     //全局过滤配置
-    'DEFAULT_FILTER' => '', //默认为htmlspecialchars
+    'DEFAULT_FILTER' => '', //TP默认为htmlspecialchars
 
     //预先加载的标签库
     'TAGLIB_PRE_LOAD' => 'Home\\TagLib\\Corethink',
@@ -61,82 +55,17 @@ return array(
     'MODULE_ALLOW_LIST'  => array('Home','Admin','Install'),
     'AUTOLOAD_NAMESPACE' => array('Addons' => THINK_ADDON_PATH), //扩展模块列表
 
-    //表单类型
-    'FORM_ITEM_TYPE' => array(
-        'hidden'     => array('隐藏', 'varchar(32) NOT NULL'),
-        'num'        => array('数字', 'int(11) UNSIGNED NOT NULL'),
-        'text'       => array('字符串', 'varchar(128) NOT NULL'),
-        'textarea'   => array('文本', 'varchar(256) NOT NULL'),
-        'array'      => array('数组', 'varchar(32) NOT NULL'),
-        'password'   => array('密码', 'varchar(64) NOT NULL'),
-        'radio'      => array('单选按钮', 'varchar(32) NOT NULL'),
-        'checkbox'   => array('复选框', 'varchar(32) NOT NULL'),
-        'select'     => array('下拉框', 'varchar(32) NOT NULL'),
-        'icon'       => array('图标', 'varchar(32) NOT NULL'),
-        'date'       => array('日期', 'int(11) UNSIGNED NOT NULL'),
-        'time'       => array('时间', 'int(11) UNSIGNED NOT NULL'),
-        'picture'    => array('图片', 'int(11) UNSIGNED NOT NULL'),
-        'pictures'   => array('图片(多图)', 'varchar(32) NOT NULL'),
-        'file'       => array('文件', 'varchar(32) NOT NULL'),
-        'files'      => array('多文件', 'varchar(32) NOT NULL'),
-        'kindeditor' => array('编辑器', 'text'),
-        'tags'       => array('标签', 'varchar(128) NOT NULL'),
-        'board  '    => array('拖动排序', 'varchar(256) NOT NULL'),
-    ),
-
-    //栏目分类前台用户投稿权限
-    'CATEGORY_POST_AUTH' => array(
-        '1'  => '允许投稿',
-        '0'  => '禁止投稿',
-    ),
-
-    //注册方式列表
-    'REG_TYPE_LIST' => array(
-        'admin'    => '后台',
-        'username' => '用户名',
-        'email'    => '邮箱',
-        'mobile'   => '手机号',
-        'sns'      => '第三方',
-    ),
-
-    //前台用户类型
-    'USER_TYPE_LIST' => array(
-        '0'  => '个人',
-        '1'  => '企业',
-    ),
-
-    //前台用户VIP等级
-    'USER_VIP_LEVEL' => array(
-        '0'  => '普通用户',
-        '1'  => '普通VIP',
-        '2'  => '高级VIP',
-    ),
-
-    //前台用户性别
-    'USER_SEX_LIST' => array(
-        '1'  => '男',
-        '-1' => '女',
-        '0'  => '保密',
-    ),
-
-    //插件类型
-    'ADDON_TYPE_LIST' => array(
-        '0'  => '系统插件',
-        '1'  => '微＋插件',
-    ),
-
-    //评论及Digg数据表ID
-    'TABLE_LIST' => array(
-        '1'  => 'Document',
-        '2'  => 'Category',
-        '3'  => 'User',
-    ),
-
-    //Digg类型
-    'DIGG_TYPE_LIST' => array(
-        '1'  => 'good', //赞
-        '2'  => 'bad',  //踩
-        '3'  => 'mark', //收藏
+    //模板相关配置
+    'TMPL_PARSE_STRING'  => array (
+        '__PUBLIC__'     => __ROOT__.'/Public',
+        '__ADMIN_IMG__'  => __ROOT__.'/'.APP_PATH.'Admin/View/_Resource/img',
+        '__ADMIN_CSS__'  => __ROOT__.'/'.APP_PATH.'Admin/View/_Resource/css',
+        '__ADMIN_JS__'   => __ROOT__.'/'.APP_PATH.'Admin/View/_Resource/js',
+        '__ADMIN_LIBS__' => __ROOT__.'/'.APP_PATH.'Admin/View/_Resource/libs',
+        '__HOME_IMG__'   => __ROOT__.'/'.APP_PATH.'Home/View/default/_Resource/img',
+        '__HOME_CSS__'   => __ROOT__.'/'.APP_PATH.'Home/View/default/_Resource/css',
+        '__HOME_JS__'    => __ROOT__.'/'.APP_PATH.'Home/View/default/_Resource/js',
+        '__HOME_LIBS__'  => __ROOT__.'/'.APP_PATH.'Home/View/default/_Resource/libs',
     ),
 
     //文件上传相关配置
@@ -153,7 +82,11 @@ return array(
         'hash'     => true, //是否生成hash编码
         'callback' => false, //检测文件是否存在回调函数，如果存在返回文件信息数组
     ),
+);
 
-    //如果数据表字段名采用大小写混合需配置此项
-    'DB_PARAMS'  =>  array(\PDO::ATTR_CASE => \PDO::CASE_NATURAL),
+//返回合并的配置
+return array_merge (
+    $_config, //系统全局默认配置
+    include APP_PATH.'/Common/Conf/db.php', //包含数据库连接配置
+    include APP_PATH.'/Common/Builder/config.php' //包含Builder配置
 );

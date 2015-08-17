@@ -9,6 +9,7 @@
 namespace Common\Util;
 /**
  * 列表树生成工具类
+ * 该类里的方法一部分来自OneThink，一部分来自网络，最后加上作者的修改形成完善的Tree类
  * @author jry <598821125@qq.com>
  */
 class Tree{
@@ -22,7 +23,6 @@ class Tree{
     * 将格式数组转换为基于标题的树（实际还是列表，只是通过在相应字段加前缀实现类似树状结构）
     * @param array $list
     * @param integer $level 进行递归时传递用的参数
-    * @author jry <598821125@qq.com>
     */
     private function _toFormatTree($list, $level = 0, $title = 'title'){
         foreach($list as $key=>$val){
@@ -47,10 +47,9 @@ class Tree{
     * 将格式数组转换为树
     * @param array $list
     * @param integer $level 进行递归时传递用的参数
-    * @author jry <598821125@qq.com>
     */
-    public function toFormatTree($list, $title = 'title', $pk='id', $pid = 'pid', $root = 0){
-        $list = $this->list_to_tree($list, $pk, $pid, '_child', $root);
+    public function toFormatTree($list, $title = 'title', $pk='id', $pid = 'pid', $root = 0, $strict = true){
+        $list = $this->list_to_tree($list, $pk, $pid, '_child', $root, $strict);
         $this->formatTree = array();
         $this->_toFormatTree($list, 0, $title);
         return $this->formatTree;
@@ -59,12 +58,14 @@ class Tree{
     /**
      * 将数据集转换成Tree（真正的Tree结构）
      * @param array $list 要转换的数据集
+     * @param string $pk ID标记字段
      * @param string $pid parent标记字段
-     * @param string $level level标记字段
+     * @param string $child 子代key名称
+     * @param string $root 返回的根节点ID
+     * @param string $strict 默认严格模式
      * @return array
-     * @author jry <598821125@qq.com>
      */
-    public function list_to_tree($list, $pk='id', $pid = 'pid', $child = '_child', $root = 0){
+    public function list_to_tree($list, $pk='id', $pid = 'pid', $child = '_child', $root = 0, $strict = true){
         // 创建Tree
         $tree = array();
         if(is_array($list)){
@@ -82,6 +83,10 @@ class Tree{
                     if(isset($refer[$parent_id])){
                         $parent =& $refer[$parent_id];
                         $parent[$child][] =& $list[$key];
+                    }else{
+                        if($strict === false){
+                            $tree[] =& $list[$key];
+                        }
                     }
                 }
             }
@@ -96,7 +101,6 @@ class Tree{
      * @param    string $order 排序显示的键，一般是主键 升序排列
      * @param    array $list 过渡用的中间数组，
      * @return array 返回排过序的列表数组
-     * @author jry <598821125@qq.com>
      */
     public function tree_to_list($tree, $child = '_child', $order='id', &$list = array()){
         if(is_array($tree)){
@@ -120,7 +124,6 @@ class Tree{
     * @param string $field 排序的字段名
     * @param array $sortby 排序类型 asc正向排序 desc逆向排序 nat自然排序
     * @return array
-    * @author jry <598821125@qq.com>
     */
     public function list_sort_by($list,$field, $sortby='asc'){
         if(is_array($list)){

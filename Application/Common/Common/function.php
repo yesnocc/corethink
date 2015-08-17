@@ -344,14 +344,15 @@ function get_user_info($id, $field){
  * @author jry <598821125@qq.com>
  */
 function get_cover($id, $type){
-    $url = D('Upload')->getPath($id);
+    $upload_info = D('PublicUpload')->find($id);
+    $url = $upload_info['real_path'];
     if(!$url){
         switch($type){
             case 'default' : //默认图片
-                $url = C('TMPL_PARSE_STRING.__IMG__').'/default1.png';
+                $url = C('TMPL_PARSE_STRING.__HOME_IMG__').'/logo/default.png';
                 break;
             case 'avatar' : //用户头像
-                $url = C('TMPL_PARSE_STRING.__IMG__').'/avatar'.rand(1,7).'.png';
+                $url = C('TMPL_PARSE_STRING.__HOME_IMG__').'/avatar/avatar'.rand(1,7).'.png';
                 break;
             default: //文档列表默认图片
                 break;
@@ -367,7 +368,7 @@ function get_cover($id, $type){
  * @author jry <598821125@qq.com>
  */
 function get_upload_info($id, $field){
-    $upload_info = D('Upload')->where('status = 1')->find($id);
+    $upload_info = D('PublicUpload')->where('status = 1')->find($id);
     if($field){
         if(!$upload_info[$field]){
             return $upload_info['id'];
@@ -378,6 +379,33 @@ function get_upload_info($id, $field){
     return $upload_info;
 }
 
+
+/**
+ * 获取所有数据并转换成一维数组
+ * @author jry <598821125@qq.com>
+ */
+function select_list_as_tree($model, $map = null, $extra = null){
+    //获取列表
+    $con['status'] = array('eq', 1);
+    if($map){
+        $con = array_merge($con, $map);
+    }
+    $list = D($model)->where($con)->select();
+
+    //转换成树状列表(非严格模式)
+    $tree = new \Common\Util\Tree();
+    $list = $tree->toFormatTree($list, 'title', 'id', 'pid', 0, false);
+
+    if($extra){
+        $result[0] = $extra;
+    }
+
+    //转换成一维数组
+    foreach($list as $val){
+        $result[$val['id']] = $val['title_show'];
+    }
+    return $result;
+}
 
 /**
  * 系统邮件发送函数

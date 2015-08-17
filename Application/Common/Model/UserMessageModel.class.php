@@ -36,55 +36,45 @@ class UserMessageModel extends Model{
     );
 
     /**
-     * 根据ID获取消息
+     * 消息类型
      * @author jry <598821125@qq.com>
      */
-    public function getMessageById($id){
-        $map['id'] = array('eq', $id);
-        return $this->where($map)->find();
-    }
-
-    /**
-     * 获取所有消息
-     * @author jry <598821125@qq.com>
-     */
-    public function getAllMessage($map, $status = '0,1'){
-        $map['status'] = array('in', $status);
-        return $this->where($map)->order('sort desc,id desc')->select();
-    }
-
-    /**
-     * 根据分类获取所有消息
-     * @author jry <598821125@qq.com>
-     */
-    public function getAllMessageByType($type, $status = '0,1'){
-        $map['type'] = array('eq', $type);
-        $map['status'] = array('in', $status);
-        $map['to_uid'] = array('eq', is_login());
-        return $this->where($map)->order('sort desc,id desc')->select();
-    }
-
-    /**
-     * 设置消息状态已读
-     * @author jry <598821125@qq.com>
-     */
-    public function readMessage($ids){
-        $map['id'] = array('in', $ids);
-        return $this->where($map)->setField('is_read', 1);
+    public function message_type($id){
+        $list[0] = '系统消息';
+        $list[1] = '评论消息';
+        $list[2] = '私信消息';
+        return $id ? $list[$id] : $list;
     }
 
     /**
      * 发送消息
      * @author jry <598821125@qq.com>
      */
-    public function sendMessage($title, $to_uid, $type = 0, $from_uid = 0){
-        $data['title'] = $title;
-        $data['to_uid'] = $to_uid;
-        $data['type'] = $type;
-        $data['from_uid'] = $from_uid;
-        $result = $this->create($data);
+    public function sendMessage($data){
+        $msg_data['title']    = $data['title']; //消息标题
+        $msg_data['content']  = $data['content'] ? : ''; //消息内容
+        $msg_data['to_uid']   = $data['to_uid']; //消息收信人ID
+        $msg_data['type']     = $data['type'] ? : 0; //消息类型
+        $msg_data['from_uid'] = $data['from_uid'] ? : 0; //消息发信人
+        $result = $this->create($msg_data);
         if($result){
+            hook('SendMessage', $msg_data); //发送消息钩子，用于消息发送途径的扩展
             return $this->add($result);
         }
+    }
+
+    /**
+     * 获取当前用户未读消息数量
+     * @param $type 消息类型
+     * @author jry <598821125@qq.com>
+     */
+    public function newMessageCount($type = null){
+        $map['status'] = array('eq', 1);
+        $map['to_uid'] = array('eq', is_login());
+        $map['is_read'] = array('eq', 0);
+        if($type !== null){
+            $map['type'] = array('eq', $type);
+        }
+        return D('UserMessage')->where($map)->count();
     }
 }

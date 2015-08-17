@@ -20,20 +20,21 @@ class DocumentController extends HomeController{
     public function index($cid){
         //获取分类信息
         $map['cid'] = $cid;
-        $category = D('Category')->find($cid);
-        switch($category['doc_type']){
+        $category_info = D('Category')->find($cid);
+        switch($category_info['doc_type']){
             case 1: //链接
-                if(stristr($category['url'], 'http://')){
-                    redirect($category['url']);
+                if(stristr($category_info['url'], 'http://')){
+                    redirect($category_info['url']);
                 }else{
-                    $this->redirect($category['url']);
+                    $this->redirect($category_info['url']);
                 }
                 break;
             case 2: //单页
-                $this->redirect('Category/detail/id/'.$category['id']);
+                $this->redirect('Category/detail/id/'.$category_info['id']);
                 break;
             default :
-                $template = $category['index_template'] ? 'Document/'.$category['index_template'] : 'Document/index_default';
+                //获取文档公共属性信息
+                $template = $category_info['index_template'] ? 'Document/'.$category_info['index_template'] : 'Document/index_default';
                 $map['status'] = array('eq', 1);
                 $document_list = D('Document')->page(!empty($_GET["p"])?$_GET["p"]:1, C('ADMIN_PAGE_ROWS'))
                                               ->order('sort desc,id desc')->where($map)->select();
@@ -41,29 +42,40 @@ class DocumentController extends HomeController{
 
                 //如果当前分类下无文档则获取子分类文档
                 if(!$document_list){
+                    //获取当前分类的子分类ID列表
                     $child_cagegory_id_list = D('Category')->where(array('pid' => $cid))->getField('id',true);
                     if($child_cagegory_id_list){
                         $map['cid'] = array('in', $child_cagegory_id_list);
                         $document_list = D('Document')->page(!empty($_GET["p"])?$_GET["p"]:1, C('ADMIN_PAGE_ROWS'))
-                                                     ->order('sort desc,id desc')->where($map)->select();
+                                                      ->order('sort desc,id desc')
+                                                      ->where($map)
+                                                      ->select();
                         $page = new \Common\Util\Page(D('Document')->where($map)->count(), C('ADMIN_PAGE_ROWS'));
                     }
                 }
 
+                //获取该分类绑定文档模型的主要字段
+                $document_type_object = D('DocumentType');
+                $document_type_main_field = $document_type_object->getFieldById($category_info['doc_type'],'main_field');
+                $document_type_main_field = D('DocumentAttribute')->getFieldById($document_type_main_field, 'name');
+
                 //获取扩展表的信息
                 foreach($document_list as &$doc){
-                    $doc_type_name = D('DocumentType')->getFieldById($doc['doc_type'], 'name');
+                    $doc_type_name = $document_type_object->getFieldById($doc['doc_type'], 'name');
                     $temp = array();
-                    $temp = D('DocumentExtend'.ucfirst($doc_type_name))->find($doc['id']);
+                    $temp = D('Document'.ucfirst($doc_type_name))->find($doc['id']);
                     $doc = array_merge($doc, $temp);
+
+                    //给文档主要字段赋值，如：文章标题、商品名称
+                    $doc['main_field'] = $doc[$document_type_main_field];
                 }
 
-                $this->assign('__CURRENT_CATEGORY__', $category['id']);
-                $this->assign('__CURRENT_CATEGORY_GROUP__', $category['group']);
-                $this->assign('info', $category);
+                $this->assign('__CURRENT_CATEGORY__', $category_info['id']);
+                $this->assign('__CURRENT_CATEGORY_GROUP__', $category_info['group']);
+                $this->assign('info', $category_info);
                 $this->assign('volist', $document_list);
                 $this->assign('page', $page->show());
-                $this->meta_title = $category['title'];
+                $this->meta_title = $category_info['title'].'列表';
                 Cookie('__forward__', $_SERVER['REQUEST_URI']);
                 $this->display($template);
         }
@@ -76,27 +88,27 @@ class DocumentController extends HomeController{
     public function mydoc(){
         $uid = $this->is_login();
 
-        //搜索
-        $keyword = (string)I('keyword');
-        $condition = array('like','%'.$keyword.'%');
-        $map['id|title'] = array($condition, $condition,'_multi'=>true);
-
-        //获取分类ID
-        if(I('doc_type')){
-            $con['doc_type'] = I('doc_type');
-            $cid_list = D('Category')->where($con)->getField('id', true);
-            if($cid_list){
-                $map['cid'] = array('in', $cid_list);
-            }
-        }
-
+        //获取文档基础信息
         $map['uid'] = $uid;
         $map['status'] = array('egt', 0);
         $document_list = D('Document')->page(!empty($_GET["p"])?$_GET["p"]:1, C('ADMIN_PAGE_ROWS'))
-                                      ->order('sort desc,id desc')->where($map)->select();
+                                      ->order('sort desc,id desc')
+                                      ->where($map)
+                                      ->select();
         $page = new \Common\Util\Page(D('Document')->where($map)->count(), C('ADMIN_PAGE_ROWS'));
 
-        Cookie('__forward__', $_SERVER['REQUEST_URI']);
+        //获取扩展表的信息
+        //前台与后台查询文档列表不一样
+        //因为前台没有指定分类ID所以只能通过先找到文档的分类ID再根据分类绑定的模型获取主要字段
+        foreach($document_list as &$document){
+            //合并基础信息与扩展信息
+            $doc_type_info = D('DocumentType')->find($document['doc_type']);
+            $document = array_merge($document, D('Document'.ucfirst($doc_type_info['name']))->find($document['id']));
+
+            //给主要字段赋值
+            $main_field_name = D('DocumentAttribute')->getFieldById($doc_type_info['main_field'], 'name');
+            $document['main_field'] = $document[$main_field_name];
+        }
 
         //使用Builder快速建立列表页面。
         $builder = new \Common\Builder\ListBuilder();
@@ -104,11 +116,10 @@ class DocumentController extends HomeController{
                 ->addTopButton('resume') //添加启用按钮
                 ->addTopButton('forbid') //添加禁用按钮
                 ->addTopButton('recycle') //添加回收按钮
-                ->setSearch('请输入ID/标题', U('Document/mydoc', array('doc_type' => I('doc_type'))))
-                ->addTableColumn('id', 'ID', 'text')
-                ->addTableColumn('title', '标题', 'text')
+                ->addTableColumn('id', 'ID')
+                ->addTableColumn('main_field', '标题')
                 ->addTableColumn('ctime', '发布时间', 'time')
-                ->addTableColumn('sort', '排序', 'text')
+                ->addTableColumn('sort', '排序')
                 ->addTableColumn('status', '状态', 'status')
                 ->addTableColumn('right_button', '操作', 'btn')
                 ->setTableDataList($document_list) //数据列表
@@ -156,7 +167,7 @@ class DocumentController extends HomeController{
                 $con['group'] = $category_info['group'];
                 $con['doc_type'] = $category_info['doc_type'];
                 $attr['value'] = $category_info['id'];
-                $attr['options'] = $this->selectListAsTree('Category', $con);
+                $attr['options'] = select_list_as_tree('Category', $con);
             }else{
                 $attr['options'] = parse_attr($attr['options']);
             }
@@ -219,7 +230,7 @@ class DocumentController extends HomeController{
                 $con = array();
                 $con['group'] = $category_info['group'];
                 $con['doc_type'] = $category_info['doc_type'];
-                $attr['options'] = $this->selectListAsTree('Category', $con);
+                $attr['options'] = select_list_as_tree('Category', $con);
             }else{
                 $attr['options'] = parse_attr($attr['options']);
             }
@@ -285,13 +296,30 @@ class DocumentController extends HomeController{
      * @author jry <598821125@qq.com>
      */
     public function detail($id){
-        $info = D('Document')->detail($id);
+        $map['status'] = array('egt', 1); //正常、隐藏两种状态是可以访问的
+        $info = D('Document')->where($map)->detail($id);
+        if(!$info){
+            $this->error('您访问的文档已禁用或不存在');
+        }
         $result = D('Document')->where(array('id' => $id))->SetInc('view'); //阅读量加1
-        $category = D('Category')->find($info['cid']);
-        $template = $category['detail_template'] ? 'Document/'.$category['detail_template'] : 'Document/detail_default';
+
+        //获取文档所属分类详细信息
+        $category_info = D('Category')->find($info['cid']);
+
+        //获取该分类绑定文档模型的主要字段
+        $document_type_object = D('DocumentType');
+        $document_type_main_field = $document_type_object->getFieldById($category_info['doc_type'],'main_field');
+        $document_type_main_field = D('DocumentAttribute')->getFieldById($document_type_main_field, 'name');
+
+        //给文档主要字段赋值，如：文章标题、商品名称
+        $info['main_field'] = $info[$document_type_main_field];
+
+        //设置文档显示模版
+        $template = $category_info['detail_template'] ? 'Document/'.$category_info['detail_template'] : 'Document/detail_default';
+
         $this->assign('info', $info);
-        $this->assign('__CURRENT_CATEGORY__', $category['id']);
-        $this->meta_title = $info['title'];
+        $this->assign('__CURRENT_CATEGORY__', $category_info['id']);
+        $this->assign('meta_title', $info['main_field']);
         Cookie('__forward__', $_SERVER['REQUEST_URI']);
         $this->display($template);
     }

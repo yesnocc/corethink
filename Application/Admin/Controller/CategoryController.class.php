@@ -47,7 +47,7 @@ EOF;
      */
     public function index($group = 1){
         //搜索
-        $keyword = (string)I('keyword');
+        $keyword = I('keyword', '', 'string');
         $condition = array('like','%'.$keyword.'%');
         $map['id|title'] = array($condition, $condition,'_multi'=>true);
 
@@ -59,8 +59,11 @@ EOF;
         $map['group'] = array('eq', $group);
         $data_list = D('Category')->field('id,pid,group,doc_type,title,url,icon,ctime,sort,status')
                                   ->where($map)->order('sort asc,id asc')->select();
+
+        //非系统特殊类型则给标题加上链接以便于进入相应文档列表
         foreach($data_list as &$item){
-            if($item['doc_type'] >= 3){
+            $document_type = D('DocumentType')->find($item['doc_type']); //获取当前文档类型
+            if($document_type['system'] === '0'){
                 $item['title'] = '<a href="'.U('Document/index', array('cid' => $item['id'])).'">'.$item['title'].'</a>';
             }
         }
@@ -77,7 +80,7 @@ EOF;
         }
 
         $attr['title'] = '编辑';
-        $attr['class'] = 'label label-info';
+        $attr['class'] = 'label label-primary';
         $attr['href']  = U('Admin/Category/edit', array('group' => $group, 'id' => '__data_id__'));
 
         //使用Builder快速建立列表页面。
@@ -97,6 +100,7 @@ EOF;
                 ->addTableColumn('right_button', '操作', 'btn')
                 ->setTableDataList($data_list)  //数据列表
                 ->addRightButton('self', $attr) //添加编辑按钮
+                ->addRightButton('hide') //添加隐藏/显示按钮
                 ->addRightButton('forbid') //添加禁用/启用按钮
                 ->addRightButton('delete') //添加删除按钮
                 ->display();
@@ -122,6 +126,7 @@ EOF;
             }
         }else{
             //获取前台模版供选择
+            $category_object = D('Category');
             $current_theme = D('SystemTheme')->where(array('current' => 1))->order('id asc')->getField('name'); //从系统主题数据表获取当前主题的名称
             $template_list = \Common\Util\File::get_dirs(getcwd().'/Application/Home/View/'.$current_theme.'/Document');
             foreach($template_list['file'] as $val){
@@ -138,16 +143,16 @@ EOF;
             $builder->setMetaTitle('新增分类')  //设置页面标题
                     ->setPostUrl(U('add')) //设置表单提交地址
                     ->addFormItem('group', 'radio', '分组', '分组', C('CATEGORY_GROUP_LIST'))
-                    ->addFormItem('pid', 'select', '上级分类', '所属的上级分类', $this->selectListAsTree('Category', array('group' => $group), '顶级分类'))
+                    ->addFormItem('pid', 'select', '上级分类', '所属的上级分类', select_list_as_tree('Category', array('group' => $group), '顶级分类'))
                     ->addFormItem('title', 'text', '分类标题', '分类标题')
-                    ->addFormItem('doc_type', 'radio', '分类内容模型', '分类内容模型', $this->selectListAsTree('DocumentType'))
+                    ->addFormItem('doc_type', 'radio', '分类内容模型', '分类内容模型', select_list_as_tree('DocumentType'))
                     ->addFormItem('url', 'text', '链接', 'U函数解析的URL或者外链', null, 'hidden')
                     ->addFormItem('content', 'kindeditor', '内容', '单页模型填写内容', null, 'hidden')
                     ->addFormItem('index_template', 'select', '列表模版', '文档列表或封面模版', $template_list_index, 'hidden')
                     ->addFormItem('detail_template', 'select', '详情页模版', '单页使用的模版或其他模型文档详情页模版', $template_list_detail, 'hidden')
                     ->addFormItem('icon', 'icon', '图标', '菜单图标')
                     ->addFormItem('sort', 'num', '排序', '用于显示的顺序')
-                    ->addFormItem('post_auth', 'radio', '投稿权限', '前台用户投稿权限', C('CATEGORY_POST_AUTH'))
+                    ->addFormItem('post_auth', 'radio', '投稿权限', '前台用户投稿权限', $category_object->post_auth())
                     ->setFormData(array('group' => $group, 'post_auth' => 1))
                     ->setExtraHtml($this->extra_html)
                     ->display();
@@ -173,7 +178,8 @@ EOF;
             }
         }else{
             //获取分类信息
-            $info = D('Category')->find($id);
+            $category_object = D('Category');
+            $info = $category_object->find($id);
 
             //获取前台模版供选择
             $current_theme = D('SystemTheme')->where(array('current' => 1))->order('id asc')->getField('name'); //从系统主题数据表获取当前主题的名称
@@ -193,16 +199,16 @@ EOF;
                     ->setPostUrl(U('Admin/Category/edit/id/'.$id.'/group/'.$group)) //设置表单提交地址
                     ->addFormItem('id', 'hidden', 'ID', 'ID')
                     ->addFormItem('group', 'radio', '分组', '分组', C('CATEGORY_GROUP_LIST'))
-                    ->addFormItem('pid', 'select', '上级分类', '所属的上级分类', $this->selectListAsTree('Category', array('group' => $group), '顶级分类'))
+                    ->addFormItem('pid', 'select', '上级分类', '所属的上级分类', select_list_as_tree('Category', array('group' => $group), '顶级分类'))
                     ->addFormItem('title', 'text', '分类标题', '分类标题')
-                    ->addFormItem('doc_type', 'radio', '分类内容模型', '分类内容模型', $this->selectListAsTree('DocumentType'))
+                    ->addFormItem('doc_type', 'radio', '分类内容模型', '分类内容模型', select_list_as_tree('DocumentType'))
                     ->addFormItem('url', 'text', '链接', 'U函数解析的URL或者外链', null, $info['doc_type'] == 1 ? : 'hidden')
                     ->addFormItem('content', 'kindeditor', '内容', '单页模型填写内容', null, $info['doc_type'] == 2 ? : 'hidden')
                     ->addFormItem('index_template', 'select', '模版', '文档列表或封面模版', $template_list_index, $info['doc_type'] > 2 ? : 'hidden')
                     ->addFormItem('detail_template', 'select', '详情页模版', '单页使用的模版或其他模型文档详情页模版', $template_list_detail, $info['doc_type'] > 1 ? : 'hidden')
                     ->addFormItem('icon', 'icon', '图标', '菜单图标')
                     ->addFormItem('sort', 'num', '排序', '用于显示的顺序')
-                    ->addFormItem('post_auth', 'radio', '投稿权限', '前台用户投稿权限', C('CATEGORY_POST_AUTH'))
+                    ->addFormItem('post_auth', 'radio', '投稿权限', '前台用户投稿权限', $category_object->post_auth())
                     ->setFormData($info)
                     ->setExtraHtml($this->extra_html)
                     ->display();

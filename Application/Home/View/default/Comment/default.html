@@ -1,8 +1,17 @@
-<div class="comment-box">
+<style type="text/css">
+    .comment-list-box .comment-list .media {
+        padding-bottom: 10px;
+        border-bottom: 1px solid #eee;
+    }
+    .comment-box {
+        margin: 10px 0px;
+    }
+</style>
+<div class="comment-list-box">
     <h3>{$info.comment} 条评论</h3>
     <div class="comment-list">
         <corethink:comment_list name="vo" table="$__CURRENT_TABLE_ID__" group="0" data_id="$info['id']">
-            <div class="media border-bottom padding-bottom">
+            <div class="media">
                 <div class="media-left">
                     <a href="{:U('User/home/uid/'.$vo['uid'])}" class="avatar">
                         <img class="img-circle" src="{$vo.avatar|get_cover='avatar'}" style="width:48px;height:48px;">
@@ -25,7 +34,7 @@
                     <div class="text">{$vo.content}</div>
                     <div class="pictures">
                         <foreach name="vo.pictures" item="img">
-                            <a href="#"><img class="img-responsive" src="{$img|get_cover}" style="width:50px;height:50px;margin:5px 5px 5px 0px;border:1px solid #eee;"></a>
+                            <a href="#"><img class="img" src="{$img|get_cover}" style="width:50px;height:50px;margin:5px 5px 5px 0px;border:1px solid #eee;"></a>
                         </foreach>
                     </div>
                     <div class="small">
@@ -37,9 +46,9 @@
     </div>
 </div>
 <php>if(C('TOGGLE_USER_COMMENT')):</php>
-    <div class="comment margin-bottom">
+    <div class="comment-box">
         <notempty name="__USER__">
-            <form action="{:U('UserComment/add')}" method="post" class="form comment-form">
+            <form action="{:U('PublicComment/add')}" method="post" class="form comment-form">
                 <div class="form-group">
                     <textarea name="content" class="form-control new-comment-text" rows="3" placeholder="评论是一种态度..."></textarea>
                 </div>
@@ -74,7 +83,7 @@
                     <script type="text/javascript">
                         $(function(){
                             $('#upload_comment_picture').Huploadify({
-                                uploader:'{:U("Upload/upload")}',
+                                uploader:'{:U("PublicUpload/upload")}',
                                 fileTypeExts:'*.gif;*.jpg;*.jpeg;*.png;*.bmp',
                                 fileSizeLimit:{:C('UPLOAD_IMAGE_SIZE')}*1024,
                                 buttonText:'<span class="fa fa-plus"></span>',
@@ -97,7 +106,7 @@
                 </div>
             </form>
         <else />
-            <div class="margin-top">
+            <div>
                 <a class="btn btn-success" href="{:U('User/register')}">注 册</a>
                 <a class="btn btn-primary" data-toggle="modal" data-target="#login-modal">登 录</a>
             </div>

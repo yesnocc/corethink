@@ -1,5 +1,13 @@
 <extend name="_Layout/main"/>
 
+<block name="style">
+    <style type="text/css">
+        .main-nav {
+            margin-bottom: 0px;
+        }
+    </style>
+</block>
+
 <block name="breadcrumb"></block>
 
 <block name="jumbotron">
@@ -11,19 +19,11 @@
     </div>
 </block>
 
-<block name="body">
+<block name="main">
     <div class="container">
         <div class="row">
             <div class="col-xs-12 col-sm-9">
                 <article class="article">
-                    <!-- 文章摘要 -->
-                    <notempty name="info.abstract">
-                        <div class="article-abstract">
-                            <blockquote class="abstract">
-                                <small>{$info.abstract}</small>
-                            </blockquote>
-                        </div>
-                    </notempty>
                     <!-- 文章正文 -->
                     <div class="article-body">
                         {$info.content|parse_content}
@@ -47,6 +47,11 @@
                             </div>
                         </div>
                     </corethink:category_list>
+                </div>
+
+                <!-- 页面侧边栏钩子 -->
+                <div class="clearfix hook hook-page-side">
+                    {:hook('PageSide')}
                 </div>
             </div>
         </div>
